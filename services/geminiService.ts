@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, HarmCategory, HarmBlockThreshold } from "@google/genai";
 import { Coordinates } from "../types";
 
 const apiKey = process.env.API_KEY || ''; // Injected by environment
@@ -154,15 +154,31 @@ export const analyzeFaceForAccess = async (base64Image: string): Promise<{ autho
             ]
         },
         config: { 
-            responseMimeType: "application/json" 
+            responseMimeType: "application/json",
+            // Disable safety settings that often flag faces as sensitive
+            safetySettings: [
+              { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+              { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
+              { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
+              { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+            ]
         }
      });
      
-     const result = JSON.parse(response.text || '{"authorized": false, "reason": "No response from AI"}');
+     // Robust JSON parsing: Remove Markdown blocks if present
+     let jsonStr = response.text || '';
+     if (jsonStr.startsWith('```json')) {
+        jsonStr = jsonStr.replace(/^```json/, '').replace(/```$/, '');
+     } else if (jsonStr.startsWith('```')) {
+        jsonStr = jsonStr.replace(/^```/, '').replace(/```$/, '');
+     }
+     
+     const result = JSON.parse(jsonStr.trim() || '{"authorized": false, "reason": "No response from AI"}');
      return result;
 
-  } catch (e) {
+  } catch (e: any) {
       console.error("Face Analysis Error:", e);
-      return { authorized: false, reason: "Biometric Service Unavailable. Check connection." };
+      // Return the actual error message to help debugging
+      return { authorized: false, reason: `Biometric Service Error: ${e.message || "Unknown Error"}` };
   }
 };

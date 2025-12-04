@@ -24,9 +24,15 @@ export const authService = {
 
     if (authError) {
       console.error("Supabase SignUp Error Details:", JSON.stringify(authError, null, 2));
+      
+      // Handle the specific 500 error caused by trigger failures
       if (authError.status === 500 || (authError as any).code === 'unexpected_failure') {
-        throw new Error("DATABASE CONFIG ERROR: The Supabase Trigger is crashing. Please run the provided 'schema.sql' script in your Supabase SQL Editor to fix this.");
+        throw new Error(
+          "DATABASE SETUP REQUIRED: The user creation trigger failed (500). \n" +
+          "Please copy the content of 'schema.sql' and run it in your Supabase SQL Editor to fix this."
+        );
       }
+      
       throw new Error(authError.message || "Registration failed");
     }
 
