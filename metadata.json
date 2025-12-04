@@ -1,0 +1,8 @@
+{
+  "name": "LankaReservoir Watch",
+  "description": "A fully Geofencing-enabled PWA for managing Sri Lankan reservoir data. Uses Gemini Google Maps Grounding for strict location verification.",
+  "requestFramePermissions": [
+    "geolocation",
+    "camera"
+  ]
+}
